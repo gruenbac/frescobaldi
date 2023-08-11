@@ -66,6 +66,9 @@ class Dialog(QDialog):
         self.modeLabel = QLabel()
         self.modeCombo = QComboBox()
 
+        self.devLabel = QLabel()
+        self.devCombo = QComboBox()
+
         self.deleteCheck = QCheckBox()
         self.embedSourceCodeCheck = QCheckBox()
         self.englishCheck = QCheckBox()
@@ -82,6 +85,9 @@ class Dialog(QDialog):
         self.resolutionCombo.setCurrentIndex(2)
 
         self.modeCombo.addItems(['preview', 'publish', 'debug', 'incipit'])
+
+        self.devCombo.addItems(['A4', 'Hal Leonard', 'Galaxy Tab s7', 'iPadPro 12.9'])
+
         layout.addWidget(self.versionLabel, 0, 0)
         layout.addWidget(self.lilyChooser, 0, 1, 1, 3)
         layout.addWidget(self.outputLabel, 1, 0)
@@ -92,13 +98,15 @@ class Dialog(QDialog):
         layout.addWidget(self.antialiasSpin, 2, 3)
         layout.addWidget(self.modeLabel, 3, 0)
         layout.addWidget(self.modeCombo, 3, 1, 1, 3)
-        layout.addWidget(self.deleteCheck, 4, 0, 1, 4)
-        layout.addWidget(self.embedSourceCodeCheck, 5, 0, 1, 4)
-        layout.addWidget(self.englishCheck, 6, 0, 1, 4)
-        layout.addWidget(self.commandLineLabel, 7, 0, 1, 4)
-        layout.addWidget(self.commandLine, 8, 0, 1, 4)
-        layout.addWidget(widgets.Separator(), 9, 0, 1, 4)
-        layout.addWidget(self.buttons, 10, 0, 1, 4)
+        layout.addWidget(self.devLabel, 4, 0)
+        layout.addWidget(self.devCombo, 4, 1, 1, 3)
+        layout.addWidget(self.deleteCheck, 5, 0, 1, 4)
+        layout.addWidget(self.embedSourceCodeCheck, 6, 0, 1, 4)
+        layout.addWidget(self.englishCheck, 7, 0, 1, 4)
+        layout.addWidget(self.commandLineLabel, 8, 0, 1, 4)
+        layout.addWidget(self.commandLine, 9, 0, 1, 4)
+        layout.addWidget(widgets.Separator(), 10, 0, 1, 4)
+        layout.addWidget(self.buttons, 11, 0, 1, 4)
 
         app.translateUI(self)
         qutil.saveDialogSize(self, "engrave/custom/dialog/size", QSize(480, 260))
@@ -123,6 +131,9 @@ class Dialog(QDialog):
         self.outputCombo.currentIndexChanged.connect(self.updateFormatControls)
         self.updateFormatControls()
 
+        self.devCombo.currentIndexChanged.connect(self.updateDevice)
+        self.updateDevice()
+
     def translateUI(self):
         self.setWindowTitle(app.caption(_("Engrave custom")))
         self.versionLabel.setText(_("LilyPond Version:"))
@@ -130,10 +141,15 @@ class Dialog(QDialog):
         self.resolutionLabel.setText(_("Resolution:"))
         self.antialiasLabel.setText(_("Antialias Factor:"))
         self.modeLabel.setText(_("Engraving mode:"))
-        self.modeCombo.setItemText(0, _("Preview"))
-        self.modeCombo.setItemText(1, _("Publish"))
-        self.modeCombo.setItemText(2, _("First System Only"))
-        self.modeCombo.setItemText(3, _("Layout Control"))
+        self.devLabel.setText(_("Target Device:"))
+        self.modeCombo.setItemText(0, ("Preview"))
+        self.modeCombo.setItemText(1, ("Publish"))
+        self.modeCombo.setItemText(2, ("First System Only"))
+        self.modeCombo.setItemText(3, ("Layout Control"))
+        self.devCombo.setItemText(0, ("A4"))
+        self.devCombo.setItemText(1, ("Hal Leonard"))
+        self.devCombo.setItemText(2, ("Galaxy Tab s7"))
+        self.devCombo.setItemText(3, ("iPadPro 12.9"))
         self.deleteCheck.setText(_("Delete intermediate output files"))
         self.embedSourceCodeCheck.setText(_("Embed Source Code"))
         self.englishCheck.setText(_("Run LilyPond with English messages"))
@@ -160,6 +176,17 @@ class Dialog(QDialog):
         self.resolutionCombo.setEnabled('resolution' in f.widgets)
         self.antialiasSpin.setEnabled('antialias' in f.widgets)
 
+    def updateDevice(self):
+        # Configure target device
+        if self.devCombo.currentIndex() == 0:   # A4
+            self.commandLine.setText("-dinclude-settings=a4.ly")
+        elif self.devCombo.currentIndex() == 1: # HAL
+            self.commandLine.setText("-dinclude-settings=hal.ly")
+        elif self.devCombo.currentIndex() == 2: # Galaxy
+            self.commandLine.setText("-dinclude-settings=galaxytabs7.ly")
+        else:                                    # debug mode
+            self.commandLine.setText("-dinclude-settings=ipadpro129.ly")
+
     def getJob(self, document):
         """Returns and configures a Job to start."""
         f = formats[self.outputCombo.currentIndex()]
@@ -179,6 +206,8 @@ class Dialog(QDialog):
             job_class = job.lilypond.LayoutControlJob
             args = panelmanager.manager(
                 self.parent()).layoutcontrol.widget().preview_options()
+
+
 
         # Instantiate Job
         j = job_class(document, args)
