@@ -23,9 +23,10 @@ The extensions framework
 
 import importlib
 import os
+import pathlib
 import sys
-import re
 from time import perf_counter
+from traceback import extract_tb
 
 from PyQt5.QtCore import (
     QDir,
@@ -53,6 +54,7 @@ import app
 import icons
 import vbcl
 import qsettings
+import util
 from . import actions, settings
 
 
@@ -798,21 +800,17 @@ class Extensions(QObject):
         - first maintainer
         - extension key.
         If the exception is *not* from an extension return None"""
-        regex = re.compile(
-            r'\s*File "({root}){sep}(.*)"'.format(
-            sep=os.sep,
-            root=re.escape(self.root_directory())))
-        for line in traceback:
-            m = regex.match(line)
-            if m:
-                tail = m.groups()[1]
-                m = re.match('(.*){sep}.*'.format(sep=os.sep), tail)
-                extension = m.groups()[0]
-                infos = self.infos(extension)
+        for frame_summary in extract_tb(traceback):
+            file_path = pathlib.Path(frame_summary.filename)
+            root_path = pathlib.Path(self.root_directory())
+            if util.path_is_relative_to(file_path, root_path):
+                rel_file_path = file_path.relative_to(root_path)
+                extension_name = rel_file_path.parts[0]
+                infos = self.infos(extension_name)
                 if infos:
                     return (infos['extension-name'],
                             infos['maintainers'][0],
-                            extension)
+                            extension_name)
 
     def load_settings(self):
         """Load application-wide settings relating to extensions."""
