@@ -53,10 +53,14 @@ def pageorder():
     yield Extensions
 
 
+class CancelClosingPreferences(Exception):
+    pass
+
+
 class PreferencesDialog(QDialog):
 
     def __init__(self, mainwindow):
-        super(PreferencesDialog, self).__init__(mainwindow)
+        super().__init__(mainwindow)
         self.setWindowModality(Qt.WindowModal)
         if mainwindow:
             self.addAction(mainwindow.actionCollection.help_whatsthis)
@@ -83,9 +87,12 @@ class PreferencesDialog(QDialog):
             | QDialogButtonBox.Reset
             | QDialogButtonBox.Help)
         layout.addWidget(b)
-        b.accepted.connect(self.accept)
+        b.accepted.connect(self.maybeAccept)
         b.rejected.connect(self.reject)
-        b.button(QDialogButtonBox.Apply).clicked.connect(self.saveSettings)
+        # saveSettings() may raise CancelClosingPreferences. This is primarily
+        # for use when it makes sense for the "Ok" button, but may occur in "Apply",
+        # so we need to catch it.
+        b.button(QDialogButtonBox.Apply).clicked.connect(self.trySaveSettings)
         b.button(QDialogButtonBox.Reset).clicked.connect(self.loadSettings)
         b.button(QDialogButtonBox.Help).clicked.connect(self.showHelp)
         b.button(QDialogButtonBox.Help).setShortcut(QKeySequence.HelpContents)
@@ -107,13 +114,24 @@ class PreferencesDialog(QDialog):
         self.pagelist.setFixedWidth(self.pagelist.sizeHintForColumn(0) + 12)
         self.setWindowTitle(app.caption(_("Preferences")))
 
-    def done(self, result):
-        if result and self.buttons.button(QDialogButtonBox.Apply).isEnabled():
+    def trySaveSettings(self):
+        try:
             self.saveSettings()
+        except CancelClosingPreferences:
+            return False
+        else:
+            return True
+
+    def maybeAccept(self):
+        if (not self.buttons.button(QDialogButtonBox.Apply).isEnabled()
+              or self.trySaveSettings()):
+            self.accept()
+
+    def done(self, result):
         # save our size and selected page
         global _prefsindex
         _prefsindex = self.pagelist.currentRow()
-        super(PreferencesDialog, self).done(result)
+        super().done(result)
 
     def pages(self):
         """Yields the settings pages that are already instantiated."""
@@ -134,7 +152,7 @@ class PreferencesDialog(QDialog):
         """Saves the settings and applies them."""
         for page in self.pages():
             if page.hasChanges:
-                page.saveSettings()
+                page.saveSettings() # this may raise CancelClosingPreferences
                 page.hasChanges = False
         self.buttons.button(QDialogButtonBox.Apply).setEnabled(False)
 
@@ -152,7 +170,7 @@ class PreferencesDialog(QDialog):
 class PrefsItemBase(QListWidgetItem):
     help = "preferences"
     def __init__(self):
-        super(PrefsItemBase, self).__init__()
+        super().__init__()
         self._widget = None
         self.setIcon(icons.get(self.iconName))
         app.translateUI(self)
@@ -324,7 +342,7 @@ class ScrolledPage(Page):
 
     """
     def __init__(self, dialog):
-        super(ScrolledPage, self).__init__(dialog)
+        super().__init__(dialog)
         layout = QVBoxLayout(margin=0, spacing=0)
         self.setLayout(layout)
         scrollarea = QScrollArea(frameWidth=0, frameShape=QScrollArea.NoFrame)
@@ -341,7 +359,7 @@ class GroupsPage(Page):
 
     """
     def __init__(self, dialog):
-        super(GroupsPage, self).__init__(dialog)
+        super().__init__(dialog)
         self.groups = []
 
     def loadSettings(self):
@@ -372,7 +390,7 @@ class Group(QGroupBox):
     changed = pyqtSignal()
 
     def __init__(self, page):
-        super(Group, self).__init__()
+        super().__init__()
         self._page = page
         page.groups.append(self)
         self.changed.connect(page.changed)

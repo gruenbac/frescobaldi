@@ -104,6 +104,7 @@ class ListEdit(QWidget):
 
     def removeItem(self, item):
         self.listBox.takeItem(self.listBox.row(item))
+        self.itemRemoved(item)
         self.changed.emit()
 
     def editItem(self, item):
@@ -131,6 +132,13 @@ class ListEdit(QWidget):
 
         Re-implement to do something at this moment if needed, e.g. alter the
         text or display of other items.
+        """
+        pass
+
+    def itemRemoved(self, item):
+        """Called after an item has been removed.
+
+        Re-implement to do something at this moment if needed.
         """
         pass
 
@@ -169,7 +177,7 @@ class FilePathEdit(ListEdit):
     A widget to edit a list of directories (e.g. a file path).
     """
     def __init__(self, *args, **kwargs):
-        super(FilePathEdit, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def fileDialog(self):
         """The QFileDialog this widget is using."""

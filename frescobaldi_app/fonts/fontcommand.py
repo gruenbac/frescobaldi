@@ -61,7 +61,7 @@ class FontCommandWidget(QScrollArea):
 } """
 
     def __init__(self, parent):
-        super(FontCommandWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self._cmd = {
             'lily': '',
@@ -251,19 +251,19 @@ class FontCommandWidget(QScrollArea):
         self.cb_oll_music.setText(_("Set music font"))
         self.cb_oll_music.setToolTip(_(
             "Specify the music font.\n"
-            + "This is a reminder only and can not be unckecked "
+            + "This is a reminder only and can not be unchecked "
             + "because the openLilyLib approach necessarily sets "
             + "the music font."
         ))
         self.cb_oll.setText(_("Load openLilyLib"))
         self.cb_oll.setToolTip(_(
             "Load openLilyLib (oll-core) explicitly.\n"
-            + "Unckeck if oll-core is already loaded elsewhere."
+            + "Uncheck if oll-core is already loaded elsewhere."
         ))
         self.cb_loadpackage.setText(_("Load notation-fonts package"))
         self.cb_loadpackage.setToolTip(_(
             "Load the notation-fonts package explicitly.\n"
-            + "Unckeck if it is already loaded elsewhere."
+            + "Uncheck if it is already loaded elsewhere."
         ))
         self.cb_extensions.setText(_("Load font extensions (if available)"))
         self.cb_extensions.setToolTip(_(
@@ -346,7 +346,7 @@ class FontCommandWidget(QScrollArea):
             """
             Add a font entry to the commands when applicable.
             """
-            font_entry = '     #:{} "{}"'.format(k, name)
+            font_entry = f'     #:{k} "{name}"'
             if checked:
                 fontdefs.append(font_entry)
                 full_fontdefs.append(font_entry)
@@ -406,7 +406,7 @@ class FontCommandWidget(QScrollArea):
             Add a property entry to the full command
             and conditionally to the regular command.
             """
-            property = '  {} = {}'.format(k, v)
+            property = f'  {k} = {v}'
             if checked:
                 properties.append(property)
             if checked or force:
@@ -463,7 +463,7 @@ class FontCommandWidget(QScrollArea):
             # Use custom stylesheet (must be findable of course)
             add_property(
                 'style',
-                '"{}"'.format(self.le_stylesheet.text()),
+                f'"{self.le_stylesheet.text()}"',
                 True
             )
 
